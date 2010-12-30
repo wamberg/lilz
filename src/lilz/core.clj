@@ -1,5 +1,6 @@
 (ns lilz.core
-  (:gen-class))
+  (:gen-class)
+  (:require [lilz.bot]))
 (defn -main [& args]
   (import '(net.percederberg.tetris Game)
           '(java.awt Frame)
@@ -14,4 +15,6 @@
                           (windowClosing [_] (System/exit 0))))
     (.show)
   )
+  (lilz.bot/init-game lilz.bot/robot)
+  (lilz.bot/play-loop lilz.bot/robot)
 )
