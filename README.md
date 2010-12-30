@@ -22,7 +22,7 @@ lilz (pronounced "lil-zee") is a program that plays tetris.  This was started as
 The simple thing to do is created a standalone .jar file that includes all the dependencies.  This takes a longer time to build but allows for simple execution:
 
     $ lein uberjar
-    $ java -jar lillilz-*-standalone.jar
+    $ java -jar lilz-*-standalone.jar
 
 This is great for creating a distributable file but for development I prefer to create a .jar which only contains the lilz project and then link to the dependent libraries:
 
