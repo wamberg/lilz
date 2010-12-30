@@ -1,1 +1,17 @@
-(ns lilz.core)
+(ns lilz.core
+  (:gen-class))
+(defn -main [& args]
+  (import '(net.percederberg.tetris Game)
+          '(java.awt Frame)
+          '(java.awt.event WindowAdapter WindowEvent))
+  (def frame (new java.awt.Frame "Tetris"))
+  (def game (new net.percederberg.tetris.Game))
+
+  (doto frame
+    (.add (.getComponent game))
+    (.pack)
+    (.addWindowListener (proxy [java.awt.event.WindowAdapter] []
+                          (windowClosing [_] (System/exit 0))))
+    (.show)
+  )
+)
