@@ -1,16 +1,15 @@
 ; This code controls simple output of the robot such as keypresses
-(ns lilz.bot
+(ns lilz.actuator
   (:require [clojure.contrib.logging :as log]))
 (import '(java.awt Robot)
         '(java.awt.event KeyEvent InputEvent))
-
-(def robot (new java.awt.Robot))
 
 (defn init-game [^java.awt.Robot bot]
   (doto bot
     (.mouseMove 267 273) ; TODO: error prone for other screen resolutions
     (.mousePress java.awt.event.InputEvent/BUTTON1_MASK)
-    (.mouseRelease java.awt.event.InputEvent/BUTTON1_MASK))
+    (.mouseRelease java.awt.event.InputEvent/BUTTON1_MASK)
+    (.delay 1000))
   (log/info "Game initialized"))
 
 (defn move-left [^java.awt.Robot bot]
@@ -36,17 +35,15 @@
   (.keyRelease bot java.awt.event.KeyEvent/VK_UP)
   (log/debug "Key Press: Counter-Clockwise"))
 
-(defn play-loop [^java.awt.Robot bot]
-  (while true
-    ; test our agent
-    (doseq [i (range 0 (rand-nth (range 0 5)))]
-      (move-left bot))
-    (doseq [i (range 0 (rand-nth (range 0 2)))]
-      (rotate-clockwise bot))
-    (doseq [i (range 0 (rand-nth (range 0 2)))]
-      (rotate-counter-clockwise bot))
-    (doseq [i (range 0 (rand-nth (range 0 5)))]
-      (move-left bot))
-    (move-down bot)
-  )
+(defn test-move [^java.awt.Robot bot]
+  ; test our agent
+  (doseq [i (range 0 (rand-nth (range 0 5)))]
+    (move-left bot))
+  (doseq [i (range 0 (rand-nth (range 0 2)))]
+    (rotate-clockwise bot))
+  (doseq [i (range 0 (rand-nth (range 0 2)))]
+    (rotate-counter-clockwise bot))
+  (doseq [i (range 0 (rand-nth (range 0 5)))]
+    (move-left bot))
+  (move-down bot)
 )
