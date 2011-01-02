@@ -43,10 +43,11 @@
   )
 )
 (defn create-board-representation [^net.percederberg.tetris.SquareBoard board]
-  ; cycle through rows
-  ; cycle through columns
-  ; build a two-dimensional list of true/false values if square is occupied
-  (nil? nil)
+  (let [matrix (board-matrix board)]
+    (for [y matrix] 
+      (for [x y] (if (not (nil? x)) true nil))
+    )
+  )
 )
 (defn is-row-empty? [row]
   "If 'row' list contains all false values, return true"
@@ -102,9 +103,9 @@
     (lilz.actuator/init-game robot) ; start the game
     (while true ; this is the outer game loop to restart processing after pauses
       (while (not= (game-paused? game) true)
-        ;(def board (create-board-representation (current-board game))) ; imagine board
+        (def board (create-board-representation (current-board game))) ; imagine board
         ; analyze potential moves
-        (def best-move (determine-best-move-for-figure (current-board game) (current-figure game)))
+        (def best-move (determine-best-move-for-figure board (current-figure game)))
         ; make a move
         (lilz.actuator/test-move robot)
       )
