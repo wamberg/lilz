@@ -1,6 +1,6 @@
 (ns lilz.brain
   (:require [lilz.actuator] [clojure.contrib.logging :as log]))
-(import '(net.percederberg.tetris Game SquareBoard)
+(import '(net.percederberg.tetris Game SquareBoard Figure)
         '(java.awt Robot))
 
 ; game functions
@@ -22,6 +22,13 @@
     (.setAccessible figure true)
     (.get figure game))
 )
+(defn max-orientation [^net.percederberg.tetris.Figure figure]
+  "Access protected maxOrientation field."
+  (let [max-rotations-field (.getDeclaredField net.percederberg.tetris.Figure "maxOrientation")]
+    (.setAccessible max-rotations-field true)
+    (.get max-rotations-field figure)
+  )
+)
 
 ; game board functions
 (defn current-board [^net.percederberg.tetris.Game game]
@@ -37,12 +44,15 @@
   (.getBoardWidth board)
 )
 (defn board-matrix [^net.percederberg.tetris.SquareBoard board]
+  " Access the protected board matrix which shows the state of the figures on
+    the game board."
   (let [matrix-field (.getDeclaredField net.percederberg.tetris.SquareBoard "matrix")]
     (.setAccessible matrix-field true)
     (.get matrix-field board)
   )
 )
 (defn create-board-representation [^net.percederberg.tetris.SquareBoard board]
+  " Create a simple representation of the figures laid out on 'board'."
   (let [matrix (board-matrix board)]
     (for [y matrix] 
       (for [x y] (if (not (nil? x)) true nil))
@@ -50,11 +60,11 @@
   )
 )
 (defn is-row-empty? [row]
-  "If 'row' list contains all false values, return true"
+  " If 'row' list contains all false values, return true"
   (every? (fn [x] (not x)) row)
 )
 (defn is-row-full? [row]
-  "If 'row' list contains all true values, return true"
+  " If 'row' list contains all true values, return true"
   (every? (fn [x] x) row)
 )
 (defn score-row [row row-completion-modifier max-width]
@@ -74,26 +84,43 @@
 (defn score-board [board]
   "Return a point value for a 'board'"
   (reduce +
-    (for [y (range 0 (- (count board) 1))
+    (for [y (range 0 (count board))
           :let [row (get board y)
                 width (count row)]]
       (score-row row y width)
     )
   )
 )
-(defn place-figure-on-board [board figure x]
-  " Place a 'figure' on the 'board' at a given 'x' coordinate
+(defn place-figure-on-board [board figure x orientation]
+  " Place a 'figure' on the 'board' at a given 'x' coordinate.  Return the
+    board's score with the placed figure.
       board - our representation of the board with current pieces
       figure - representation of the piece we're placing
-      x - 0-based position where we want to lay the figure"
-  (nil? nil)
+      x - 0-based position where we want to lay the figure
+      orientation - numerical orientation given to Figures in net.percederberg.tetris.Figure"
+  ; starting with y at the bottom of the board (max-height) try to place
+  ; the figure on every (x, y) going up the board.  On the first (x, y) where
+  ; the figure fits, create a simple board representation with the figure
+  ; place at (x, y)
+  42
 )
-(defn determine-best-move-for-figure [board figure]
+(defn compare-scores [one two]
+  (if (> (first one) (first two)) one two)
+)
+(defn determine-best-move-for-figure [board ^net.percederberg.tetris.Figure figure]
   " Tally point totals for all possible moves of a 'figure' on our 'board'.
-    Return a list: (x-coordinate clockwise-rotations)
+    Return a list: (score x-coordinate orientation)
       board - our representation of the board with current pieces
       figure - representation of the piece we're placing"
-  (nil? nil)
+  (reduce compare-scores
+    (for [x (range 0 (count (first board)))] ; from 0 to width of board
+      (reduce compare-scores
+        (for [orientation (range 0 (max-orientation figure))] ; for each orientation of the piece
+          (list (place-figure-on-board board figure x orientation) x orientation)
+        )
+      )
+    )
+  )
 )
 
 ; play loop

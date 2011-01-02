@@ -46,4 +46,5 @@
   (doseq [i (range 0 (rand-nth (range 0 5)))]
     (move-left bot))
   (move-down bot)
+  (.delay bot 1000)
 )
