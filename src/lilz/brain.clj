@@ -91,7 +91,7 @@
     )
   )
 )
-(defn place-figure-on-board [board figure x orientation]
+(defn place-figure-on-board [board ^net.percederberg.tetris.Figure figure x orientation]
   " Place a 'figure' on the 'board' at a given 'x' coordinate.  Return the
     board's score with the placed figure.
       board - our representation of the board with current pieces
@@ -102,9 +102,25 @@
   ; the figure on every (x, y) going up the board.  On the first (x, y) where
   ; the figure fits, create a simple board representation with the figure
   ; place at (x, y)
-  42
+  (def first-y (first (for [y (range (- (count board) -1 -1)) :when (.canMoveTo figure x y orientation)] y)))
+  
+  (if-not (nil? first-y)
+    ; place figure on board
+    (let [figure-coord ; create coordinates of placed figures
+            (for [relative-coords (map list ; create relative coordinates for figure
+                (for [relative-x (range 0 4)] (.getRelativeX figure relative-x orientation))
+                (for [relative-y (range 0 4)] (.getRelativeY figure relative-y orientation)))]
+              (+ '(x first-y) relative-coords)
+            )]
+      ;create board with placed figure
+      ; TODO: loop through existing board copying it except make figure-coord true
+      ; score resulting board
+    )
+    0 ; return zero if figure can't fit on board for this 'x'
+  )
 )
 (defn compare-scores [one two]
+  "The score is kept in the first position of the lists 'one' and 'two'."
   (if (> (first one) (first two)) one two)
 )
 (defn determine-best-move-for-figure [board ^net.percederberg.tetris.Figure figure]
@@ -113,12 +129,8 @@
       board - our representation of the board with current pieces
       figure - representation of the piece we're placing"
   (reduce compare-scores
-    (for [x (range 0 (count (first board)))] ; from 0 to width of board
-      (reduce compare-scores
-        (for [orientation (range 0 (max-orientation figure))] ; for each orientation of the piece
-          (list (place-figure-on-board board figure x orientation) x orientation)
-        )
-      )
+    (for [x (range 0 (count (first board))) orientation (range 0 (max-orientation figure))] ; from 0 to width of board
+      (list (place-figure-on-board board figure x orientation) x orientation)
     )
   )
 )
