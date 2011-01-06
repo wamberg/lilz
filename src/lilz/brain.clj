@@ -37,6 +37,15 @@
     (.get board-field game)
   )
 )
+(defn can-move-to [^net.percederberg.tetris.Figure figure x y orientation]
+  " Made net.percederberg.tetris.Figure.canMoveTo accessible.
+   TODO: sending a Class[] for parameterTypes on getDeclaredMethod is killing me.
+   I may cheat and search through .getDeclaredMethods for canMoveTo."
+  (let [can-move-to-method (.getDeclaredMethod net.percederberg.tetris.Figure "canMoveTo" nil)]
+    (.setAccessible can-move-to-method true)
+    (.invoke can-move-to-method figure [x y orientation])
+  )
+)
 (defn board-height [^net.percederberg.tetris.SquareBoard board]
   (.getBoardHeight board)
 )
@@ -91,6 +100,21 @@
     )
   )
 )
+(defn print-board [board]
+  (doseq [board-row board]
+    (println board-row)
+  )
+)
+(defn create-board-with-placed-figure [board figure-coords]
+  (for [y (range (count board))] ; create board with placed figure
+    (for [x (range (count (first board)))]
+      (if (contains? figure-coords '(x y))
+        true
+        (get (get board y) x)
+      )
+    )
+  )
+)
 (defn place-figure-on-board [board ^net.percederberg.tetris.Figure figure x orientation]
   " Place a 'figure' on the 'board' at a given 'x' coordinate.  Return the
     board's score with the placed figure.
@@ -102,19 +126,20 @@
   ; the figure on every (x, y) going up the board.  On the first (x, y) where
   ; the figure fits, create a simple board representation with the figure
   ; place at (x, y)
-  (def first-y (first (for [y (range (- (count board) -1 -1)) :when (.canMoveTo figure x y orientation)] y)))
+  (def first-y (first (for [y (range (- (count board) -1 -1)) :when (can-move-to figure x y orientation)] y)))
   
   (if-not (nil? first-y)
     ; place figure on board
-    (let [figure-coord ; create coordinates of placed figures
+    (let [figure-coords ; create coordinates of placed figures
             (for [relative-coords (map list ; create relative coordinates for figure
                 (for [relative-x (range 0 4)] (.getRelativeX figure relative-x orientation))
                 (for [relative-y (range 0 4)] (.getRelativeY figure relative-y orientation)))]
               (+ '(x first-y) relative-coords)
             )]
-      ;create board with placed figure
-      ; TODO: loop through existing board copying it except make figure-coord true
-      ; score resulting board
+      ; create board with placed figure and score resulting board
+      (def move-candidate-board (place-figure-on-board board figure-coords))
+      (log/info move-candidate-board)
+      (score-board move-candidate-board)
     )
     0 ; return zero if figure can't fit on board for this 'x'
   )
