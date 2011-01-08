@@ -100,6 +100,7 @@
 (defn score-row [row row-completion-modifier max-width]
   " Add points for each true value in 'row'.  If row is complete, multiply
     by 'row-completion-modifier'.  Return the point tally for the row."
+  (log/debug (str "score-row: " (clojure.contrib.str-utils/str-join " " [row row-completion-modifier max-width])))
   (if (not (is-row-empty? row))
     (if (is-row-full? row)
       ; a full line is worth:
@@ -109,6 +110,7 @@
       ; each filled square is worth its row-completion-modifier value
       (reduce + (for [x row :when (not (nil? x))] row-completion-modifier))
     )
+    0 ; no points if row is empty
   )
 )
 (defn score-board [board]
@@ -129,14 +131,14 @@
 (defn create-board-with-placed-figure [board figure-coords]
   ;(log/debug (str "create-board-with-placed-figure: " figure-coords))
   (log/debug (str "board before placement: " (print-board board)))
-  (for [y (range (count board))] ; create board with placed figure
-    (for [x (range (count (first board)))]
+  (vec (for [y (range (count board))] ; create board with placed figure
+    (vec(for [x (range (count (first board)))]
       (if (nil? (some #{[x y]} figure-coords))
         (get (get board y) x)
         true
       )
-    )
-  )
+    ))
+  ))
 )
 (defn place-figure-on-board [board ^net.percederberg.tetris.Figure figure x orientation]
   " Place a 'figure' on the 'board' at a given 'x' coordinate.  Return the
@@ -198,7 +200,7 @@
         (def board (create-board-representation (current-board game))) ; imagine board
         ; analyze potential moves
         (def best-move (determine-best-move-for-figure board (current-figure game)))
-        (log/debug "best-move: " best-move)
+        (log/debug (str "best-move: " best-move))
         ; make a move
         (lilz.actuator/test-move robot)
       )
