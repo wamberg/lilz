@@ -33,5 +33,5 @@
 (defn rotate-counter-clockwise [^java.awt.Robot bot]
   (.keyPress bot java.awt.event.KeyEvent/VK_UP)
   (.keyRelease bot java.awt.event.KeyEvent/VK_UP)
-  (log/debug "Key Press: Counter-Clockwise"))
+  (log/debug "Key Press: Counter-Clockwise")
 )
