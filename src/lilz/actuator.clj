@@ -34,17 +34,4 @@
   (.keyPress bot java.awt.event.KeyEvent/VK_UP)
   (.keyRelease bot java.awt.event.KeyEvent/VK_UP)
   (log/debug "Key Press: Counter-Clockwise"))
-
-(defn test-move [^java.awt.Robot bot]
-  ; test our agent
-  (doseq [i (range 0 (rand-nth (range 0 5)))]
-    (move-left bot))
-  (doseq [i (range 0 (rand-nth (range 0 2)))]
-    (rotate-clockwise bot))
-  (doseq [i (range 0 (rand-nth (range 0 2)))]
-    (rotate-counter-clockwise bot))
-  (doseq [i (range 0 (rand-nth (range 0 5)))]
-    (move-left bot))
-  (move-down bot)
-  (.delay bot 1000)
 )

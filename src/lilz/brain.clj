@@ -73,6 +73,12 @@
     (.get orientation-field figure)
   )
 )
+(defn figure-x-pos [^net.percederberg.tetris.Figure figure]
+  (let [x-pos-field (.getDeclaredField net.percederberg.tetris.Figure "xPos")]
+    (.setAccessible x-pos-field true)
+    (.get x-pos-field figure)
+  )
+)
 (defn board-height [^net.percederberg.tetris.SquareBoard board]
   (.getBoardHeight board)
 )
@@ -205,6 +211,9 @@
       (while (not= (game-paused? game) true)
         (def board (create-board-representation (current-board game))) ; imagine board
         ; analyze potential moves
+        (while (nil? (current-figure game)) ; loop until a figure is attached to the board
+          (.delay robot 50)
+        )
         (def figure (current-figure game))
         (def best-move (determine-best-move-for-figure board figure))
         (log/info (str "best-move: " best-move))
@@ -215,6 +224,15 @@
           (while (not= (figure-current-orientation figure) orientation)
             (lilz.actuator/rotate-clockwise robot)
           )
+          ; move the figure left and right until optimal x position is reached
+          (while (not= (figure-x-pos figure) x)
+            (if (> (figure-x-pos figure) x)
+              (lilz.actuator/move-left robot)
+              (lilz.actuator/move-right robot)
+            )
+          )
+          (lilz.actuator/move-down robot)
+          (.delay robot 1000)
         )
       )
     )
