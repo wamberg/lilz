@@ -67,6 +67,12 @@
     (.invoke get-relative-y-method figure (object-array [square orientation]))
   )
 )
+(defn figure-current-orientation [^net.percederberg.tetris.Figure figure]
+  (let [orientation-field (.getDeclaredField net.percederberg.tetris.Figure "orientation")]
+    (.setAccessible orientation-field true)
+    (.get orientation-field figure)
+  )
+)
 (defn board-height [^net.percederberg.tetris.SquareBoard board]
   (.getBoardHeight board)
 )
@@ -199,10 +205,17 @@
       (while (not= (game-paused? game) true)
         (def board (create-board-representation (current-board game))) ; imagine board
         ; analyze potential moves
-        (def best-move (determine-best-move-for-figure board (current-figure game)))
-        (log/debug (str "best-move: " best-move))
+        (def figure (current-figure game))
+        (def best-move (determine-best-move-for-figure board figure))
+        (log/info (str "best-move: " best-move))
         ; make a move
-        (lilz.actuator/test-move robot)
+        ;(lilz.actuator/test-move robot)
+        (let [move (rest best-move) x (first move) orientation (second move)]
+          ; change the figure orientation until we reach optimal
+          (while (not= (figure-current-orientation figure) orientation)
+            (lilz.actuator/rotate-clockwise robot)
+          )
+        )
       )
     )
   )
