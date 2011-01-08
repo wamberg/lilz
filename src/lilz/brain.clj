@@ -1,5 +1,5 @@
 (ns lilz.brain
-  (:require [lilz.actuator] [clojure.contrib.logging :as log]))
+  (:require [lilz.actuator] [clojure.contrib.logging :as log][clojure.contrib.str-utils]))
 (import '(net.percederberg.tetris Game SquareBoard Figure)
         '(java.awt Robot))
 
@@ -39,11 +39,32 @@
 )
 (defn can-move-to [^net.percederberg.tetris.Figure figure x y orientation]
   " Made net.percederberg.tetris.Figure.canMoveTo accessible.
-   TODO: sending a Class[] for parameterTypes on getDeclaredMethod is killing me.
-   I may cheat and search through .getDeclaredMethods for canMoveTo."
-  (let [can-move-to-method (.getDeclaredMethod net.percederberg.tetris.Figure "canMoveTo" nil)]
+   Note sending a Class[] for parameterTypes on getDeclaredMethod was killing me.
+   The resulting solution seems more hackish than normal."
+  (let [can-move-to-method (first (filter (fn [x] (= "canMoveTo" (.getName x))) (.getDeclaredMethods net.percederberg.tetris.Figure)))]
+    (log/debug (str "can-move-to: " (clojure.contrib.str-utils/str-join " " [can-move-to-method figure x y orientation])))
     (.setAccessible can-move-to-method true)
-    (.invoke can-move-to-method figure [x y orientation])
+    (.invoke can-move-to-method figure (object-array [x y orientation]))
+  )
+)
+(defn get-relative-x [^net.percederberg.tetris.Figure figure square orientation]
+  " Made net.percederberg.tetris.Figure.getRelativeX accessible.
+   Note sending a Class[] for parameterTypes on getDeclaredMethod was killing me.
+   The resulting solution seems more hackish than normal."
+  (let [get-relative-x-method (first (filter (fn [x] (= "getRelativeX" (.getName x))) (.getDeclaredMethods net.percederberg.tetris.Figure)))]
+    (log/debug (str "get-relative-x: " (clojure.contrib.str-utils/str-join " " [square orientation])))
+    (.setAccessible get-relative-x-method true)
+    (.invoke get-relative-x-method figure (object-array [square orientation]))
+  )
+)
+(defn get-relative-y [^net.percederberg.tetris.Figure figure square orientation]
+  " Made net.percederberg.tetris.Figure.getRelativeY accessible.
+   Note sending a Class[] for parameterTypes on getDeclaredMethod was killing me.
+   The resulting solution seems more hackish than normal."
+  (let [get-relative-y-method (first (filter (fn [x] (= "getRelativeY" (.getName x))) (.getDeclaredMethods net.percederberg.tetris.Figure)))]
+    (log/debug (str "get-relative-y: " (clojure.contrib.str-utils/str-join " " [square orientation])))
+    (.setAccessible get-relative-y-method true)
+    (.invoke get-relative-y-method figure (object-array [square orientation]))
   )
 )
 (defn board-height [^net.percederberg.tetris.SquareBoard board]
@@ -63,9 +84,9 @@
 (defn create-board-representation [^net.percederberg.tetris.SquareBoard board]
   " Create a simple representation of the figures laid out on 'board'."
   (let [matrix (board-matrix board)]
-    (for [y matrix] 
-      (for [x y] (if (not (nil? x)) true nil))
-    )
+    (vec(for [y matrix] 
+      (vec (for [x y] (if (not (nil? x)) true nil)))
+    ))
   )
 )
 (defn is-row-empty? [row]
@@ -106,11 +127,13 @@
   )
 )
 (defn create-board-with-placed-figure [board figure-coords]
+  ;(log/debug (str "create-board-with-placed-figure: " figure-coords))
+  (log/debug (str "board before placement: " (print-board board)))
   (for [y (range (count board))] ; create board with placed figure
     (for [x (range (count (first board)))]
-      (if (contains? figure-coords '(x y))
-        true
+      (if (nil? (some #{[x y]} figure-coords))
         (get (get board y) x)
+        true
       )
     )
   )
@@ -126,19 +149,23 @@
   ; the figure on every (x, y) going up the board.  On the first (x, y) where
   ; the figure fits, create a simple board representation with the figure
   ; place at (x, y)
-  (def first-y (first (for [y (range (- (count board) -1 -1)) :when (can-move-to figure x y orientation)] y)))
+  (log/debug (str "place-figure-on-board: " (clojure.contrib.str-utils/str-join " " [figure x orientation])))
+  (def first-y (first (for [y (range (- (count board) 1) -1 -1) :when (can-move-to figure x y orientation)] y)))
   
   (if-not (nil? first-y)
     ; place figure on board
     (let [figure-coords ; create coordinates of placed figures
-            (for [relative-coords (map list ; create relative coordinates for figure
-                (for [relative-x (range 0 4)] (.getRelativeX figure relative-x orientation))
-                (for [relative-y (range 0 4)] (.getRelativeY figure relative-y orientation)))]
-              (+ '(x first-y) relative-coords)
+            (for [relative-coord (map list ; create relative coordinates for figure
+                (for [relative-x (range 0 4)] (get-relative-x figure relative-x orientation))
+                (for [relative-y (range 0 4)] (get-relative-y figure relative-y orientation)))]
+              (map + [x first-y] relative-coord)
             )]
       ; create board with placed figure and score resulting board
-      (def move-candidate-board (place-figure-on-board board figure-coords))
-      (log/info move-candidate-board)
+      (log/debug (str "figure-coords: " (print-board figure-coords)))
+      (def move-candidate-board (create-board-with-placed-figure board figure-coords))
+      (log/debug (str "move-candidate-board: " (clojure.contrib.str-utils/str-join " " [x orientation])))
+      (log/debug (str "board with figure: " (print-board move-candidate-board)))
+
       (score-board move-candidate-board)
     )
     0 ; return zero if figure can't fit on board for this 'x'
@@ -153,6 +180,7 @@
     Return a list: (score x-coordinate orientation)
       board - our representation of the board with current pieces
       figure - representation of the piece we're placing"
+  (log/debug (str "determine-best-move-for-figure: " figure))
   (reduce compare-scores
     (for [x (range 0 (count (first board))) orientation (range 0 (max-orientation figure))] ; from 0 to width of board
       (list (place-figure-on-board board figure x orientation) x orientation)
@@ -170,6 +198,7 @@
         (def board (create-board-representation (current-board game))) ; imagine board
         ; analyze potential moves
         (def best-move (determine-best-move-for-figure board (current-figure game)))
+        (log/debug "best-move: " best-move)
         ; make a move
         (lilz.actuator/test-move robot)
       )
