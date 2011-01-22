@@ -164,7 +164,7 @@
   ; the figure fits, create a simple board representation with the figure
   ; place at (x, y)
   (log/debug (str "place-figure-on-board: " (clojure.contrib.str-utils/str-join " " [figure x orientation])))
-  (def first-y (first (for [y (range (- (count board) 1) -1 -1) :when (can-move-to figure x y orientation)] y)))
+  (def first-y (last (for [y (range 0 (count board)) :while (can-move-to figure x y orientation)] y)))
   
   (if-not (nil? first-y)
     ; place figure on board
