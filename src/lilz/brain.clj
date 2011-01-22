@@ -152,7 +152,7 @@
     ))
   ))
 )
-(defn place-figure-on-board [board ^net.percederberg.tetris.Figure figure x orientation]
+(defn place-figure-on-board [board ^net.percederberg.tetris.Figure figure x orientation debug?]
   " Place a 'figure' on the 'board' at a given 'x' coordinate.  Return the
     board's score with the placed figure.
       board - our representation of the board with current pieces
@@ -178,7 +178,7 @@
       (log/debug (str "figure-coords: " (print-board figure-coords)))
       (def move-candidate-board (create-board-with-placed-figure board figure-coords))
       (log/debug (str "move-candidate-board: " (clojure.contrib.str-utils/str-join " " [x orientation])))
-      (log/debug (str "board with figure: " (print-board move-candidate-board)))
+      (if debug?(log/info (str "board with figure: " (print-board move-candidate-board))))
 
       (score-board move-candidate-board)
     )
@@ -197,7 +197,7 @@
   (log/debug (str "determine-best-move-for-figure: " figure))
   (reduce compare-scores
     (for [x (range 0 (count (first board))) orientation (range 0 (max-orientation figure))] ; from 0 to width of board
-      (list (place-figure-on-board board figure x orientation) x orientation)
+      (list (place-figure-on-board board figure x orientation false) x orientation)
     )
   )
 )
@@ -220,16 +220,20 @@
         ; make a move
         ;(lilz.actuator/test-move robot)
         (let [move (rest best-move) x (first move) orientation (second move)]
+          (place-figure-on-board board figure x orientation true)
           ; change the figure orientation until we reach optimal
           (while (not= (figure-current-orientation figure) orientation)
             (lilz.actuator/rotate-clockwise robot)
+            (.delay robot 500)
           )
           ; move the figure left and right until optimal x position is reached
           (while (not= (figure-x-pos figure) x)
+            (log/info (str "figure-x-pos: " (figure-x-pos figure) " optimal-x: " x))
             (if (> (figure-x-pos figure) x)
               (lilz.actuator/move-left robot)
               (lilz.actuator/move-right robot)
             )
+            (.delay robot 500)
           )
           (lilz.actuator/move-down robot)
           (.delay robot 1000)
