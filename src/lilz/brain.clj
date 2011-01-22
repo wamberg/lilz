@@ -205,7 +205,8 @@
 ; play loop
 (defn start [^net.percederberg.tetris.Game core-game]
   (let [game core-game
-        robot (new java.awt.Robot)]
+        robot (new java.awt.Robot)
+        move-delay 100]
     (lilz.actuator/init-game robot) ; start the game
     (while true ; this is the outer game loop to restart processing after pauses
       (while (not= (game-paused? game) true)
@@ -216,27 +217,26 @@
         )
         (def figure (current-figure game))
         (def best-move (determine-best-move-for-figure board figure))
-        (log/info (str "best-move: " best-move))
         ; make a move
         ;(lilz.actuator/test-move robot)
         (let [move (rest best-move) x (first move) orientation (second move)]
-          (place-figure-on-board board figure x orientation true)
+          ;(place-figure-on-board board figure x orientation true)
           ; change the figure orientation until we reach optimal
           (while (not= (figure-current-orientation figure) orientation)
             (lilz.actuator/rotate-clockwise robot)
-            (.delay robot 500)
+            (.delay robot move-delay)
           )
           ; move the figure left and right until optimal x position is reached
           (while (not= (figure-x-pos figure) x)
-            (log/info (str "figure-x-pos: " (figure-x-pos figure) " optimal-x: " x))
+            ;(log/info (str "figure-x-pos: " (figure-x-pos figure) " optimal-x: " x))
             (if (> (figure-x-pos figure) x)
               (lilz.actuator/move-left robot)
               (lilz.actuator/move-right robot)
             )
-            (.delay robot 500)
+            (.delay robot move-delay)
           )
           (lilz.actuator/move-down robot)
-          (.delay robot 1000)
+          (.delay robot 700)
         )
       )
     )
